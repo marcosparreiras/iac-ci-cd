@@ -12,7 +12,6 @@ resource "aws_iam_openid_connect_provider" "oidc_git" {
 resource "aws_iam_role" "ecr-role" {
   name       = "ecr-role"
   depends_on = [aws_iam_openid_connect_provider.oidc_git]
-
   # Terraform's "jsonencode" function converts a
   # Terraform expression result to valid JSON syntax.
   assume_role_policy = jsonencode({
@@ -36,7 +35,29 @@ resource "aws_iam_role" "ecr-role" {
     ]
     }
   )
-
+  inline_policy {
+    name = "ecr_app_permission"
+    policy = jsonencode({
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Sid = "Statement1"
+          Action = [
+            "ecr:GetDownloadUrlForLayer",
+            "ecr:BatchGetImage",
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:PutImage",
+            "ecr:InitiateLayerUpload",
+            "ecr:UploadLayerPart",
+            "ecr:CompleteLayerUpload",
+            "ecr:GetAuthorizationToken",
+          ]
+          Effect   = "Allow"
+          Resource = "*"
+        }
+      ]
+    })
+  }
   tags = {
     IAC = "True"
   }
