@@ -39,9 +39,16 @@ resource "aws_iam_role" "ecr-role" {
     name = "ecr_app_permission"
     policy = jsonencode({
       Version = "2012-10-17"
-      Statement = [
+      Statement = [{
+        Sid = "Statement1",
+        Action = [
+          "apprunner:*"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+        },
         {
-          Sid = "Statement1"
+          Sid = "Statement2"
           Action = [
             "ecr:GetDownloadUrlForLayer",
             "ecr:BatchGetImage",
@@ -54,10 +61,42 @@ resource "aws_iam_role" "ecr-role" {
           ]
           Effect   = "Allow"
           Resource = "*"
+        },
+        {
+          Sid = "Statement3",
+          Action = [
+            "iam:PassRole",
+            "iam:CreateServiceLinkedRole"
+          ]
+          Effect   = "Allow"
+          Resource = "*"
         }
       ]
     })
   }
+  tags = {
+    IAC = "True"
+  }
+}
+
+resource "aws_iam_role" "app_runner_role" {
+  name       = "app_runner_role"
+  depends_on = [aws_iam_openid_connect_provider.oidc_git]
+  assume_role_policy = jsonencode({
+    Version : "2012-10-17",
+    Statement : [
+      {
+        Effect : "Allow",
+        Principal : {
+          Service : "build.apprunner.amazonaws.com"
+        },
+        Action : "sts:AssumeRole"
+      }
+    ]
+  })
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  ]
   tags = {
     IAC = "True"
   }
